@@ -228,6 +228,9 @@ class LocalEvalSetsManager(EvalSetsManager):
   def list_eval_sets(self, app_name: str) -> list[str]:
     """Returns a list of EvalSets that belong to the given app_name."""
     eval_set_file_path = os.path.join(self._agents_dir, app_name)
+    if not os.path.exists(eval_set_file_path):
+      return []
+
     eval_sets = []
     for file in os.listdir(eval_set_file_path):
       if file.endswith(_EVAL_SET_FILE_EXTENSION):
