@@ -228,14 +228,16 @@ class LocalEvalSetsManager(EvalSetsManager):
   def list_eval_sets(self, app_name: str) -> list[str]:
     """Returns a list of EvalSets that belong to the given app_name."""
     eval_set_file_path = os.path.join(self._agents_dir, app_name)
-    eval_sets = []
-    for file in os.listdir(eval_set_file_path):
-      if file.endswith(_EVAL_SET_FILE_EXTENSION):
-        eval_sets.append(
-            os.path.basename(file).removesuffix(_EVAL_SET_FILE_EXTENSION)
-        )
-
-    return sorted(eval_sets)
+    try:
+      eval_sets = []
+      for file in os.listdir(eval_set_file_path):
+        if file.endswith(_EVAL_SET_FILE_EXTENSION):
+          eval_sets.append(
+              os.path.basename(file).removesuffix(_EVAL_SET_FILE_EXTENSION)
+          )
+      return sorted(eval_sets)
+    except FileNotFoundError:
+      return []
 
   @override
   def get_eval_case(
