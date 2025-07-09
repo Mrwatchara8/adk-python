@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import annotations
+
 from abc import abstractmethod
 from typing import AsyncGenerator
 
@@ -58,6 +60,24 @@ class BaseLlmConnection:
 
     Args:
       blob: The blob to send to the model.
+    """
+    pass
+
+  @abstractmethod
+  async def send_activity_start(self):
+    """Sends an activity start signal to mark the beginning of user input.
+
+    This is used for manual activity control when automatic voice activity
+    detection is disabled.
+    """
+    pass
+
+  @abstractmethod
+  async def send_activity_end(self):
+    """Sends an activity end signal to mark the end of user input.
+
+    This is used for manual activity control when automatic voice activity
+    detection is disabled.
     """
     pass
 
