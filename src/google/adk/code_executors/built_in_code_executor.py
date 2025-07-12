@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import annotations
+
 from google.genai import types
 from typing_extensions import override
 
@@ -39,7 +41,7 @@ class BuiltInCodeExecutor(BaseCodeExecutor):
 
   def process_llm_request(self, llm_request: LlmRequest) -> None:
     """Pre-process the LLM request for Gemini 2.0+ models to use the code execution tool."""
-    if llm_request.model and llm_request.model.startswith("gemini-2"):
+    if llm_request.model and "gemini-2" in llm_request.model:
       llm_request.config = llm_request.config or types.GenerateContentConfig()
       llm_request.config.tools = llm_request.config.tools or []
       llm_request.config.tools.append(

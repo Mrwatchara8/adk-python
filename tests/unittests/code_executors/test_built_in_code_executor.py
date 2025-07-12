@@ -107,3 +107,117 @@ def test_process_llm_request_no_model_name(
   assert "Gemini code execution tool is not supported for model None" in str(
       excinfo.value
   )
+
+
+def test_process_llm_request_empty_model_name(
+    built_in_executor: BuiltInCodeExecutor,
+):
+  """Tests that a ValueError is raised for empty model name."""
+  llm_request = LlmRequest(model="")
+  with pytest.raises(ValueError) as excinfo:
+    built_in_executor.process_llm_request(llm_request)
+  assert "Gemini code execution tool is not supported for model " in str(
+      excinfo.value
+  )
+
+
+def test_process_llm_request_case_sensitivity(
+    built_in_executor: BuiltInCodeExecutor,
+):
+  """Tests that the model name check is case-sensitive."""
+  llm_request = LlmRequest(model="GEMINI-2.0-FLASH")
+  with pytest.raises(ValueError) as excinfo:
+    built_in_executor.process_llm_request(llm_request)
+  assert (
+      "Gemini code execution tool is not supported for model GEMINI-2.0-FLASH"
+      in str(excinfo.value)
+  )
+
+
+def test_process_llm_request_partial_match_false_positive(
+    built_in_executor: BuiltInCodeExecutor,
+):
+  """Tests that partial matches that aren't actually Gemini 2 models are rejected."""
+  llm_request = LlmRequest(model="custom-gemini-2-like-model")
+  built_in_executor.process_llm_request(llm_request)
+  assert llm_request.config is not None
+  assert llm_request.config.tools == [
+      types.Tool(code_execution=types.ToolCodeExecution())
+  ]
+
+
+def test_process_llm_request_gemini_2_substring_in_middle(
+    built_in_executor: BuiltInCodeExecutor,
+):
+  """Tests that 'gemini-2' substring anywhere in the model name is accepted."""
+  llm_request = LlmRequest(model="provider-gemini-2.0-custom")
+  built_in_executor.process_llm_request(llm_request)
+  assert llm_request.config is not None
+  assert llm_request.config.tools == [
+      types.Tool(code_execution=types.ToolCodeExecution())
+  ]
+
+
+def test_process_llm_request_gemini_2_different_versions(
+    built_in_executor: BuiltInCodeExecutor,
+):
+  """Tests that different Gemini 2 versions are supported."""
+  models = [
+      "gemini-2.0-flash",
+      "gemini-2.0-pro",
+      "gemini-2.0-ultra",
+      "gemini-2.1-flash",
+      "gemini-2.5-experimental",
+  ]
+
+  for model in models:
+    llm_request = LlmRequest(model=model)
+    built_in_executor.process_llm_request(llm_request)
+    assert llm_request.config is not None
+    assert llm_request.config.tools == [
+        types.Tool(code_execution=types.ToolCodeExecution())
+    ]
+
+
+def test_process_llm_request_non_gemini_models(
+    built_in_executor: BuiltInCodeExecutor,
+):
+  """Tests that non-Gemini models are rejected."""
+  models = [
+      "gpt-4",
+      "claude-3",
+      "llama-2",
+      "gemini-1.5-pro",
+      "gemini-1.0-pro",
+      "gemini-pro",
+  ]
+
+  for model in models:
+    llm_request = LlmRequest(model=model)
+    with pytest.raises(ValueError) as excinfo:
+      built_in_executor.process_llm_request(llm_request)
+    assert (
+        f"Gemini code execution tool is not supported for model {model}"
+        in str(excinfo.value)
+    )
+
+
+def test_process_llm_request_preserves_existing_config_properties(
+    built_in_executor: BuiltInCodeExecutor,
+):
+  """Tests that existing config properties are preserved."""
+  config = types.GenerateContentConfig(
+      temperature=0.5, top_p=0.8, max_output_tokens=1000, tools=[]
+  )
+  llm_request = LlmRequest(model="gemini-2.0-flash", config=config)
+  built_in_executor.process_llm_request(llm_request)
+
+  # Check that existing properties are preserved
+  assert llm_request.config.temperature == 0.5
+  assert llm_request.config.top_p == 0.8
+  assert llm_request.config.max_output_tokens == 1000
+
+  # Check that the code execution tool was added
+  assert llm_request.config.tools == [
+      types.Tool(code_execution=types.ToolCodeExecution())
+  ]
